@@ -1,5 +1,5 @@
 annotated-types==0.7.0
-anthropic==0.109.1
+openai
 anyio==4.13.0
 certifi==2026.5.20
 distro==1.9.0
