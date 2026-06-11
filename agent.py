@@ -82,6 +82,27 @@ available_tools = [{
             "required" : ["path", "content"]
         }
     }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "search_code",
+        "description": "Search for a pattern in files recursively. Use this to find where a function, variable, or string is defined or used.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "pattern": {
+                    "type": "string",
+                    "description": "The search pattern (grep-compatible)"
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Directory or file to search in. Defaults to current directory."
+                }
+            },
+            "required": ["pattern"]
+        }
+    }
 }
 ]
 
@@ -160,4 +181,20 @@ while True:
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": f"Successfully wrote {file_path}"
+                    })
+                elif tool_call.function.name == "search_code":
+                    args = json.loads(tool_call.function.arguments)
+                    path = args.get("path", ".")
+                    pattern = args["pattern"]
+                    path = json.loads(tool_call.function.arguments)["path"] or "."
+                    result = subprocess.run(f"rg -n {pattern} {path}", shell=True, capture_output=True, text=True)
+                    output = result.stdout
+                    if result.stderr:
+                        output += "\nSTDERR: " + result.stderr
+                    if not output:
+                        output = "(no output)"
+                    conversation.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content" : output
                     })
