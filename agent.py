@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import openai
 import json
 import os
+import subprocess
 
 load_dotenv()
 
@@ -42,7 +43,26 @@ available_tools = [{
             "required" : ["path"]
         }
     }
-}]
+},
+{
+
+   "type" : "function",
+    "function": {
+        "name": "bash",
+        "description": "Execute a bash command and return its output",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "The bash command to execute"
+                }
+            },
+            "required": ["command"]
+        }
+    }
+}
+]
 
 while True:
     try:
@@ -94,4 +114,17 @@ while True:
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": listed_files,
+                    })
+                elif tool_call.function.name == "bash":
+                    command = json.loads(tool_call.function.arguments)["command"]
+                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                    output = result.stdout
+                    if result.stderr:
+                        output += "\nSTDERR: " + result.stderr
+                    if not output:
+                        output = "(no output)"
+                    conversation.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content" : output
                     })
