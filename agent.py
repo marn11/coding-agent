@@ -117,24 +117,28 @@ while True:
     except EOFError:
         exit(0)
     while True:
-        response = client.chat.completions.create(
+        with client.chat.completions.stream(
             max_tokens=1024,
             messages=conversation,
             model="gpt-4o",
             tools=available_tools
-        )
-        if response.choices[0].finish_reason == "stop":
-            reply_text = response.choices[0].message.content
+        ) as stream:
+            for event in stream:
+                if event.type == "content.delta":
+                    print(event.delta, end="", flush=True)
+            print()
+            final = stream.get_final_completion()
+        if final.choices[0].finish_reason == "stop":
+            reply_text = final.choices[0].message.content
             conversation.append({"role": "assistant", "content": reply_text})
-            print(reply_text)
             break
-        elif response.choices[0].finish_reason == "tool_calls":
+        elif final.choices[0].finish_reason == "tool_calls":
             conversation.append({
                 "role": "assistant",
-                "content": response.choices[0].message.content,
-                "tool_calls": [tc.model_dump() for tc in response.choices[0].message.tool_calls]
+                "content": final.choices[0].message.content,
+                "tool_calls": [tc.model_dump() for tc in final.choices[0].message.tool_calls]
             })
-            for tool_call in response.choices[0].message.tool_calls:
+            for tool_call in final.choices[0].message.tool_calls:
                 if tool_call.function.name == "read_file":
                     args = json.loads(tool_call.function.arguments)
                     try:
