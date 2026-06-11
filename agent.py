@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import openai
 import json
+import os
 
 load_dotenv()
 
@@ -24,15 +25,35 @@ available_tools = [{
             "required": ["path"]
         }
     }
+}, 
+{
+    "type": "function",
+    "function": {
+        "name": "list_files",
+        "description": "List all files in a directory",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "The directory path to list"
+                }
+            },
+            "required" : ["path"]
+        }
+    }
 }]
 
 while True:
-    message = input("Enter your prompt: ")
-    if message == "exit":
+    try:
+        message = input("Enter your prompt: ")
+        if message == "exit":
+            exit(0)
+        if not message:
+            continue
+        conversation.append({"role": "user", "content": message})
+    except EOFError:
         exit(0)
-    if not message:
-        continue
-    conversation.append({"role": "user", "content": message})
     while True:
         response = client.chat.completions.create(
             max_tokens=1024,
@@ -62,4 +83,15 @@ while True:
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": file_content
+                    })
+                elif tool_call.function.name == "list_files":
+                    path = json.loads(tool_call.function.arguments)["path"]
+                    try:
+                        listed_files = "\n".join(os.listdir(path))
+                    except FileNotFoundError:
+                        listed_files = f"Error: path not found: {path}"
+                    conversation.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": listed_files,
                     })
