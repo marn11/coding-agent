@@ -61,6 +61,27 @@ available_tools = [{
             "required": ["command"]
         }
     }
+},
+{
+    "type": "function",
+    "function": {
+        "name": "edit_file",
+        "description": "Write content to a file, creating it if it doesn't exist",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type" : "string",
+                    "description": "The file path to write to"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "The full content to write to the file"
+                }
+            },
+            "required" : ["path", "content"]
+        }
+    }
 }
 ]
 
@@ -127,4 +148,16 @@ while True:
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content" : output
+                    })
+                elif tool_call.function.name == "edit_file":
+                    file_path = json.loads(tool_call.function.arguments)["path"]
+                    file_content = json.loads(tool_call.function.arguments)["content"]
+                    try:
+                        open(file_path, "w").write(file_content)
+                    except PermissionError:
+                        file_content = f"Error: can't write to the path: {file_path}"
+                    conversation.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": f"Successfully wrote {file_path}"
                     })
