@@ -1,6 +1,12 @@
 # Coding Agent
 
+<p align="center">
+  <img src="docs/screenshots/chat-with-tools-full.png" alt="Coding Agent — the agent analyzing agent.py" width="100%" />
+</p>
+
 A coding agent built from scratch — CLI and web interface. Uses the OpenAI API with a manual agentic loop: the model decides which tools to call, you execute them, feed the results back, and repeat until it's done.
+
+**Stack:** Python · FastAPI (SSE streaming) · Next.js 16 · TypeScript · Tailwind · OpenAI tool calling
 
 ## Screenshots
 
